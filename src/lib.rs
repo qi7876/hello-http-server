@@ -87,3 +87,30 @@ impl Worker {
         Worker { id, thread }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::{sync::mpsc, time::Duration};
+
+    #[test]
+    #[should_panic]
+    fn rejects_zero_workers() {
+        ThreadPool::new(0);
+    }
+
+    #[test]
+    fn execute_a_job() {
+        let pool = ThreadPool::new(2);
+        let (tx, rx) = mpsc::channel();
+        let message = String::from("Complete the job!");
+
+        pool.execute(move || tx.send(message).unwrap());
+
+        let result = rx
+            .recv_timeout(Duration::from_secs(2))
+            .expect("Time out for rx!");
+
+        assert_eq!(result, "Complete the job!");
+    }
+}
